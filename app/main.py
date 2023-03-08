@@ -1,23 +1,17 @@
-from fastapi import FastAPI, Response, status, HTTPException
+from fastapi import FastAPI, Response, status, HTTPException, Depends
 from fastapi.params import Body
 from pydantic import BaseModel
 from typing import Optional
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from sqlalchemy.orm import Session
 import time
 from . import models
-from .database import engine, SessionLocal
+from .database import engine, SessionLocal, get_db
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 #define a class how a post should look like
 
@@ -32,7 +26,7 @@ while True:
     try:
         # environment variables to be added
         conn = psycopg2.connect(host='localhost', database = 'fastapi', user = 'postgres', 
-        password = 'password', cursor_factory=RealDictCursor)
+        password = 'Adopado@77', cursor_factory=RealDictCursor)
 
         cursor = conn.cursor()
         print("Database Connection was succesfull")
@@ -50,24 +44,36 @@ async def root():
     return {"message": "Welcome to my api !!!!"}
 
 @app.get("/posts")
-def get_posts():
-    cursor.execute(""" SELECT * FROM posts """)
-    posts = cursor.fetchall()
-    print(posts)
+def get_posts(db: Session = Depends(get_db)):
+    # cursor.execute(""" SELECT * FROM posts """)
+    # posts = cursor.fetchall()
+    # print(posts)
+    posts = db.query(models.posts).all()
     return {"Data": posts}
+
+
+@app.get("/sqlalchemy")
+def test_posts(db : Session = Depends(get_db)):
+
+    posts_new = db.query(models.posts).all()
+    return{"data": posts_new}
 
 #creating a post    
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
-def create_posts(post: Post):
+def create_posts(post: Post, db: Session = Depends(get_db)):
     #print(new_post)
     #print(new_post.dict())
-    cursor.execute(""" INSERT INTO posts (title, content, published) VALUES (%s, %s, %s)
-      RETURNING * """, (post.title, post.content, post.published))
+    # cursor.execute(""" INSERT INTO posts (title, content, published) VALUES (%s, %s, %s)
+    #   RETURNING * """, (post.title, post.content, post.published))
     
-    new_post = cursor.fetchone()
-    conn.commit()
-    print(new_post)
+    # new_post = cursor.fetchone()
+    # conn.commit()
+    # print(new_post)
+    new_post = models.posts(title = post.title, content= post.content, published = post.published)
+    db.add(new_post)
+    db.commit()
+    db.refresh(new_post)
 
     return{"Data": new_post}
 
