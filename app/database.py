@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 
 #SQLACEHMY_DATABASE_URL = "postgresql://<username>:<password>@<ip-address/hostname>/<database_name>"
 
-SQLACEHMY_DATABASE_URL = "postgresql://postgres:password@localhost/fastapi"
+SQLACEHMY_DATABASE_URL = "postgresql://postgres:fefffe@77@localhost/fastapi"
 
 engine = create_engine(SQLACEHMY_DATABASE_URL)
 

@@ -26,7 +26,7 @@ while True:
     try:
         # environment variables to be added
         conn = psycopg2.connect(host='localhost', database = 'fastapi', user = 'postgres', 
-        password = 'password', cursor_factory=RealDictCursor)
+        password = 'dvvfvfv', cursor_factory=RealDictCursor)
 
         cursor = conn.cursor()
         print("Database Connection was succesfull")
@@ -71,20 +71,23 @@ def create_posts(post: Post, db: Session = Depends(get_db)):
     # conn.commit()
     # print(new_post)
 
-    print(post.dict())
-    new_post = models.posts(title = post.title, content= post.content, published = post.published)
+    #print(**post.dict())
+    #new_post = models.posts(title = post.title, content= post.content, published = post.published)
+    new_post = models.posts(**post.dict())
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
-
+    
     return{"Data": new_post}
 
 # fetching an individual post from the id
 
 @app.get("/posts/{id}")
-def get_post(id: int):
-    cursor.execute(""" SELECT * FROM posts WHERE id = %s """,(id,))
-    post = cursor.fetchone()
+def get_post(id: int, db:Session = Depends(get_db)):
+    # cursor.execute(""" SELECT * FROM posts WHERE id = %s """,(id,))
+    # post = cursor.fetchone()
+
+    post = db.query(models.posts).filter(models.posts.id == id).first()
 
     if not post :
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
