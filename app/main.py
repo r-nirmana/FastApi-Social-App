@@ -26,7 +26,7 @@ while True:
     try:
         # environment variables to be added
         conn = psycopg2.connect(host='localhost', database = 'fastapi', user = 'postgres', 
-        password = 'dvvfvfv', cursor_factory=RealDictCursor)
+        password = 'Adopado@77', cursor_factory=RealDictCursor)
 
         cursor = conn.cursor()
         print("Database Connection was succesfull")
@@ -97,25 +97,42 @@ def get_post(id: int, db:Session = Depends(get_db)):
 # Deleting a single post
 
 @app.delete("/posts/{id}",status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id: int):
-    cursor.execute(""" DELETE FROM posts WHERE id = %s RETURNING * """, (id,))
-    deleted_post = cursor.fetchone()
-    conn.commit()
+def delete_post(id: int, db:Session = Depends(get_db)):
+    # cursor.execute(""" DELETE FROM posts WHERE id = %s RETURNING * """, (id,))
+    # deleted_post = cursor.fetchone()
+    # conn.commit()
 
-    if deleted_post == None:
+    post_query = db.query(models.posts).filter(models.posts.id == id)
+
+    if post_query.first() == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"post with ID : {id} does not exist")
+    
+    post_query.delete(synchronize_session=False)
+    db.commit()
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 # updating a post
 
 @app.put("/posts/{id}")
-def update_post(id:int, post: Post):
-    cursor.execute(""" UPDATE posts SET title = %s, content = %s, published = %s WHERE id = %s RETURNING * """,
-                   (post.title, post.content, post.published, (id,)) )
-    updated_post = cursor.fetchone()
-    conn.commit()
-    if updated_post == None:
+def update_post(id:int, post: Post, db:Session = Depends(get_db)):
+    # cursor.execute(""" UPDATE posts SET title = %s, content = %s, published = %s WHERE id = %s RETURNING * """,
+    #                (post.title, post.content, post.published, (id,)) )
+    # updated_post = cursor.fetchone()
+    # conn.commit()
+    query_updated = db.query(models.posts).filter(models.posts.id == id)
+    
+
+    if query_updated.first() == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"post with ID : {id} does not exist")
-    return {"data" : updated_post}
+    
+    # query_updated.update({'title':'updated title', 'content':'updated content'},synchronize_session=
+    #                      False)
+
+    query_updated.update(post.dict(),synchronize_session=False)
+    
+
+    db.commit()
+    return {"data" : query_updated.first()}
