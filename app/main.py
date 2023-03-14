@@ -22,7 +22,7 @@ while True:
     try:
         # environment variables to be added
         conn = psycopg2.connect(host='localhost', database = 'fastapi', user = 'postgres', 
-        password = 'Adopado@77', cursor_factory=RealDictCursor)
+        password = 'fvfbfgfg', cursor_factory=RealDictCursor)
 
         cursor = conn.cursor()
         print("Database Connection was succesfull")
