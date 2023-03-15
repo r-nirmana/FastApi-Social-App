@@ -6,15 +6,13 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from sqlalchemy.orm import Session
 import time
-from . import models, schemas
+from . import models, schemas, utils
 from .database import engine, SessionLocal, get_db
+
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-
-#define a class how a post should look like
-
 
 
 while True:    
@@ -22,7 +20,7 @@ while True:
     try:
         # environment variables to be added
         conn = psycopg2.connect(host='localhost', database = 'fastapi', user = 'postgres', 
-        password = 'fvfbfgfg', cursor_factory=RealDictCursor)
+        password = 'password', cursor_factory=RealDictCursor)
 
         cursor = conn.cursor()
         print("Database Connection was succesfull")
@@ -116,3 +114,22 @@ def update_post(id:int, post: schemas.PostCreate, db:Session = Depends(get_db)):
 
     db.commit()
     return query_updated.first()
+
+
+#.................................USERS..................................................
+#........................................................................................
+
+@app.post("/users", status_code= status.HTTP_201_CREATED, response_model=schemas.UserOut)
+def create_user(user:schemas.UserCreate, db: Session = Depends(get_db)):
+
+    # hash the password - user.password
+    hashed_password = utils.hash(user.password)
+    user.password = hashed_password
+
+    new_user = models.user(**user.dict())
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return new_user
+
